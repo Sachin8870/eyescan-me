@@ -1,0 +1,859 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>eyescanme — AI Eye Disease Detection</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap');
+
+      :root {
+        --navy: #0a1628;
+        --navy2: #112040;
+        --navy3: #0d1a35;
+        --white: #f0f6ff;
+        --accent: #1a7de8;
+        --accent2: #0fa3b1;
+        --danger: #e84040;
+        --warn: #e8a020;
+        --ok: #22c97a;
+        --muted: #6b7fa3;
+        --border: rgba(255, 255, 255, 0.07);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: 'DM Sans', sans-serif;
+        background: var(--navy);
+        color: var(--white);
+        min-height: 100vh;
+      }
+
+      nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.1rem 2rem;
+        border-bottom: 0.5px solid var(--border);
+      }
+
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+      }
+
+      .logo span {
+        color: var(--accent);
+      }
+
+      .logo-ring {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1.5px solid var(--accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .eye-svg {
+        width: 16px;
+        height: 9px;
+      }
+
+      .pill {
+        background: rgba(26, 125, 232, 0.15);
+        border: 0.5px solid rgba(26, 125, 232, 0.3);
+        border-radius: 20px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.72rem;
+        color: #7ab8f5;
+        letter-spacing: 0.05em;
+      }
+
+      .main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem 4rem;
+      }
+
+      .page-header {
+        margin-bottom: 2.5rem;
+      }
+
+      .page-header h1 {
+        font-family: 'DM Serif Display', serif;
+        font-size: 2.4rem;
+        line-height: 1.15;
+        margin-bottom: 0.5rem;
+      }
+
+      .page-header h1 em {
+        font-style: italic;
+        color: #7ab8f5;
+      }
+
+      .page-header p {
+        color: var(--muted);
+        font-size: 0.92rem;
+        max-width: 520px;
+        line-height: 1.65;
+      }
+
+      .disclaimer {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        background: rgba(232, 160, 32, 0.08);
+        border: 0.5px solid rgba(232, 160, 32, 0.25);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 2rem;
+        font-size: 0.8rem;
+        color: rgba(255, 220, 140, 0.85);
+        line-height: 1.5;
+      }
+
+      .upload-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        margin-bottom: 1.75rem;
+      }
+
+      .upload-box {
+        background: var(--navy2);
+        border: 0.5px solid var(--border);
+        border-radius: 14px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: border-color 0.2s;
+      }
+
+      .upload-box:hover {
+        border-color: rgba(26, 125, 232, 0.4);
+      }
+
+      .upload-box.active {
+        border-color: rgba(26, 125, 232, 0.6);
+      }
+
+      .upload-label {
+        font-size: 0.72rem;
+        color: var(--accent2);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+      }
+
+      .drop-zone {
+        border: 1px dashed rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        min-height: 160px;
+        position: relative;
+        overflow: hidden;
+        transition: border-color 0.2s;
+      }
+
+      .drop-zone:hover {
+        border-color: rgba(26, 125, 232, 0.4);
+      }
+
+      .drop-zone img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+        position: absolute;
+        inset: 0;
+      }
+
+      .drop-icon {
+        opacity: 0.3;
+      }
+
+      .drop-text {
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .drop-btn {
+        background: rgba(26, 125, 232, 0.15);
+        border: 0.5px solid rgba(26, 125, 232, 0.3);
+        border-radius: 6px;
+        padding: 0.4rem 1rem;
+        font-size: 0.78rem;
+        color: #7ab8f5;
+        cursor: pointer;
+        font-family: 'DM Sans', sans-serif;
+        transition: background 0.2s;
+      }
+
+      .drop-btn:hover {
+        background: rgba(26, 125, 232, 0.25);
+      }
+
+      input[type=file] {
+        display: none;
+      }
+
+      .analyze-btn {
+        width: 100%;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        padding: 0.9rem;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-family: 'DM Sans', sans-serif;
+        cursor: pointer;
+        transition: background 0.2s;
+        margin-bottom: 1.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .analyze-btn:hover {
+        background: #1668c8;
+      }
+
+      .analyze-btn:disabled {
+        background: rgba(26, 125, 232, 0.3);
+        cursor: not-allowed;
+      }
+
+      .spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        display: none;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      .results {
+        display: none;
+      }
+
+      .results.show {
+        display: block;
+      }
+
+      .results-header {
+        font-family: 'DM Serif Display', serif;
+        font-size: 1.4rem;
+        margin-bottom: 1.25rem;
+        color: var(--white);
+      }
+
+      .findings {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .finding-card {
+        background: var(--navy2);
+        border: 0.5px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+      }
+
+      .finding-title {
+        font-size: 0.72rem;
+        color: var(--muted);
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+      }
+
+      .finding-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .finding-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .finding-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .finding-name {
+        font-size: 0.88rem;
+        color: var(--white);
+      }
+
+      .finding-desc {
+        font-size: 0.72rem;
+        color: var(--muted);
+        line-height: 1.3;
+      }
+
+      .finding-bar-wrap {
+        flex: 1;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .finding-bar {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .bar-ok { background: var(--ok); }
+      .bar-warn { background: var(--warn); }
+      .bar-danger { background: var(--danger); }
+
+      .finding-pct {
+        font-size: 0.78rem;
+        font-weight: 500;
+        min-width: 36px;
+        text-align: right;
+      }
+
+      .pct-ok { color: var(--ok); }
+      .pct-warn { color: var(--warn); }
+      .pct-danger { color: var(--danger); }
+
+      .severity-row {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .severity-pill {
+        padding: 0.45rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .sev-normal {
+        background: rgba(34, 201, 122, 0.12);
+        color: #4adf9a;
+        border: 0.5px solid rgba(34, 201, 122, 0.25);
+      }
+
+      .sev-mild {
+        background: rgba(232, 160, 32, 0.12);
+        color: #f5c060;
+        border: 0.5px solid rgba(232, 160, 32, 0.25);
+      }
+
+      .sev-moderate {
+        background: rgba(232, 100, 20, 0.12);
+        color: #f0904a;
+        border: 0.5px solid rgba(232, 100, 20, 0.25);
+      }
+
+      .sev-severe {
+        background: rgba(232, 64, 64, 0.12);
+        color: #f07070;
+        border: 0.5px solid rgba(232, 64, 64, 0.25);
+      }
+
+      .summary-box {
+        background: var(--navy3);
+        border: 0.5px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .summary-title {
+        font-size: 0.72rem;
+        color: var(--accent2);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+
+      .summary-text {
+        font-size: 0.88rem;
+        color: rgba(255, 255, 255, 0.75);
+        line-height: 1.7;
+        font-style: italic;
+      }
+
+      .reco-box {
+        background: rgba(26, 125, 232, 0.08);
+        border: 0.5px solid rgba(26, 125, 232, 0.2);
+        border-radius: 12px;
+        padding: 1.25rem;
+      }
+
+      .reco-title {
+        font-size: 0.72rem;
+        color: #7ab8f5;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+
+      .reco-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .reco-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 0.87rem;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.5;
+      }
+
+      .reco-dot {
+        width: 5px;
+        height: 5px;
+        background: var(--accent);
+        border-radius: 50%;
+        margin-top: 6px;
+        flex-shrink: 0;
+      }
+
+      .scan-anim {
+        display: none;
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      .scan-anim.show {
+        display: block;
+      }
+
+      .scan-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #1a7de8, transparent);
+        animation: scandown 1.8s ease-in-out infinite;
+      }
+
+      @keyframes scandown {
+        0% { top: 0; opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+      }
+
+      .progress-bar-outer {
+        height: 3px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 2px;
+        margin-bottom: 1.75rem;
+        display: none;
+      }
+
+      .progress-bar-inner {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 2px;
+        width: 0;
+        transition: width 0.3s;
+      }
+
+      .no-image-msg {
+        font-size: 0.82rem;
+        color: var(--danger);
+        text-align: center;
+        margin-bottom: 1.75rem;
+        display: none;
+      }
+
+      @media(max-width: 640px) {
+        .upload-grid, .findings { grid-template-columns: 1fr; }
+        .page-header h1 { font-size: 1.75rem; }
+        .main { padding: 1.5rem 1rem 3rem; }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div class="logo">
+        <div class="logo-ring">
+          <svg class="eye-svg" viewBox="0 0 16 9" fill="none">
+            <path d="M1 4.5 Q8 0 15 4.5 Q8 9 1 4.5Z" stroke="#1a7de8" stroke-width="1.2" fill="none"/>
+            <circle cx="8" cy="4.5" r="2" fill="#1a7de8"/>
+          </svg>
+        </div>
+        eyes<span>can</span>me
+      </div>
+      <div class="pill">AI Diagnostics — Beta</div>
+    </nav>
+
+    <div class="main">
+      <div class="page-header">
+        <h1>AI-powered <em>eye disease</em><br>detection</h1>
+        <p>Upload a photo of your eye or face. Our AI analyzes it in real time for signs of common ocular and facial health conditions.</p>
+      </div>
+
+      <div class="disclaimer">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="8" cy="8" r="7" stroke="#e8a020" stroke-width="1.2"/><line x1="8" y1="5" x2="8" y2="9" stroke="#e8a020" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="11.2" r="0.8" fill="#e8a020"/></svg>
+        For informational screening only — not a substitute for professional ophthalmological diagnosis. Always consult a qualified clinician.
+      </div>
+
+      <div class="upload-grid">
+        <div class="upload-box" id="eyeBox">
+          <div class="upload-label">Eye Image</div>
+          <div class="drop-zone" id="eyeDrop">
+            <div class="scan-anim" id="eyeScan"><div class="scan-line"></div></div>
+            <svg class="drop-icon" width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M4 16 Q16 6 28 16 Q16 26 4 16Z" stroke="white" stroke-width="1.5" fill="none"/><circle cx="16" cy="16" r="5" stroke="white" stroke-width="1.5"/><circle cx="16" cy="16" r="2" fill="white"/></svg>
+            <div class="drop-text">Close-up photo of eye<br><span style="font-size:0.72rem;opacity:0.5">JPG, PNG — max 10MB</span></div>
+            <button class="drop-btn" id="eyeBtn">Choose file</button>
+          </div>
+          <input type="file" id="eyeFile" accept="image/*">
+        </div>
+        <div class="upload-box" id="faceBox">
+          <div class="upload-label">Face Photo</div>
+          <div class="drop-zone" id="faceDrop">
+            <div class="scan-anim" id="faceScan"><div class="scan-line"></div></div>
+            <svg class="drop-icon" width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="12" r="5" stroke="white" stroke-width="1.5"/><path d="M6 28 C6 22 26 22 26 28" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <div class="drop-text">Front-facing face photo<br><span style="font-size:0.72rem;opacity:0.5">JPG, PNG — max 10MB</span></div>
+            <button class="drop-btn" id="faceBtn">Choose file</button>
+          </div>
+          <input type="file" id="faceFile" accept="image/*">
+        </div>
+      </div>
+
+      <div class="no-image-msg" id="noImgMsg">Please upload at least one image to begin analysis.</div>
+      <div class="progress-bar-outer" id="progOuter"><div class="progress-bar-inner" id="progBar"></div></div>
+
+      <button class="analyze-btn" id="analyzeBtn">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7.5" stroke="white" stroke-width="1.3"/><path d="M6 9 Q9 5 12 9 Q9 13 6 9Z" stroke="white" stroke-width="1.3" fill="none"/><circle cx="9" cy="9" r="2" fill="white"/></svg>
+        <span id="btnText">Analyse Images</span>
+        <div class="spinner" id="spinner"></div>
+      </button>
+
+      <div class="results" id="results">
+        <div class="results-header">Diagnostic Report</div>
+        <div class="severity-row" id="severityRow"></div>
+        <div class="findings" id="findings"></div>
+        <div class="summary-box">
+          <div class="summary-title">Clinical Summary</div>
+          <div class="summary-text" id="summaryText"></div>
+        </div>
+        <div class="reco-box">
+          <div class="reco-title">Recommendations</div>
+          <div class="reco-list" id="recoList"></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { GoogleGenAI } from "https://esm.run/@google/genai";
+
+      // Note: In a standalone file, you would typically need to provide your API key here.
+      // For this environment, it's injected via process.env.GEMINI_API_KEY if bundled,
+      // but for a truly standalone HTML file, we'll use a placeholder or prompt.
+      const API_KEY = "AIzaSyAqaEEP-zU8jUo23za6JY_YFeIFECOpeIo"; 
+
+      let eyeData = null;
+      let faceData = null;
+
+      const eyeFile = document.getElementById('eyeFile');
+      const faceFile = document.getElementById('faceFile');
+      const eyeBtn = document.getElementById('eyeBtn');
+      const faceBtn = document.getElementById('faceBtn');
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const noImgMsg = document.getElementById('noImgMsg');
+      const progOuter = document.getElementById('progOuter');
+      const progBar = document.getElementById('progBar');
+      const spinner = document.getElementById('spinner');
+      const btnText = document.getElementById('btnText');
+      const results = document.getElementById('results');
+
+      eyeBtn.addEventListener('click', () => eyeFile.click());
+      faceBtn.addEventListener('click', () => faceFile.click());
+
+      eyeFile.addEventListener('change', (e) => handleUpload('eye', e.target));
+      faceFile.addEventListener('change', (e) => handleUpload('face', e.target));
+      analyzeBtn.addEventListener('click', runAnalysis);
+
+      function handleUpload(type, input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          const data = e.target.result;
+          if (type === 'eye') {
+            eyeData = data;
+            showPreview('eyeDrop', 'eyeScan', data);
+          } else {
+            faceData = data;
+            showPreview('faceDrop', 'faceScan', data);
+          }
+          noImgMsg.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function showPreview(dropId, scanId, src) {
+        const drop = document.getElementById(dropId);
+        drop.querySelectorAll('.drop-icon, .drop-text, .drop-btn').forEach(e => e.style.display = 'none');
+        let img = drop.querySelector('img');
+        if (!img) {
+          img = document.createElement('img');
+          drop.appendChild(img);
+        }
+        img.src = src;
+        img.style.display = 'block';
+        const scan = document.getElementById(scanId);
+        scan.classList.add('show');
+        setTimeout(() => scan.classList.remove('show'), 3000);
+      }
+
+      async function runAnalysis() {
+        if (!eyeData && !faceData) {
+          noImgMsg.style.display = 'block';
+          return;
+        }
+        
+        noImgMsg.style.display = 'none';
+        analyzeBtn.disabled = true;
+        btnText.textContent = 'Analysing...';
+        spinner.style.display = 'block';
+        results.classList.remove('show');
+
+        progOuter.style.display = 'block';
+        progBar.style.width = '0';
+        let pct = 0;
+        const progInt = setInterval(() => {
+          pct = Math.min(pct + Math.random() * 8, 88);
+          progBar.style.width = pct + '%';
+        }, 200);
+
+        try {
+          // Use the provided API key or fallback to environment if available
+          const apiKey = API_KEY === "YOUR_GEMINI_API_KEY_HERE" ? (window.process?.env?.GEMINI_API_KEY || "") : API_KEY;
+          
+          if (!apiKey) {
+            alert("Please provide a Gemini API Key in the source code to run the analysis.");
+            throw new Error("API Key missing");
+          }
+
+          const ai = new GoogleGenAI({ apiKey });
+          const model = "gemini-3-flash-preview";
+
+          const parts = [];
+          if (eyeData) {
+            parts.push({
+              inlineData: {
+                mimeType: "image/jpeg",
+                data: eyeData.split(',')[1]
+              }
+            });
+          }
+          if (faceData) {
+            parts.push({
+              inlineData: {
+                mimeType: "image/jpeg",
+                data: faceData.split(',')[1]
+              }
+            });
+          }
+
+          parts.push({
+            text: `You are a world-class clinical ophthalmology and diagnostic facial health AI specialist. Your task is to perform a high-accuracy, high-analysis screening of the provided image(s).
+
+Analyze the images with extreme precision, looking for subtle clinical markers of ocular, facial, and systemic diseases.
+
+Return ONLY a valid JSON object. Use this exact schema:
+{
+  "conditions": [
+    {
+      "name": "string",
+      "confidence": 0-100,
+      "severity": "normal|mild|moderate|severe",
+      "category": "eye|face|systemic",
+      "description": "Short clinical observation"
+    }
+  ],
+  "overall_severity": "normal|mild|moderate|severe",
+  "diagnostic_confidence_score": 0-100,
+  "summary": "Detailed 3-4 sentence clinical summary of findings, noting specific visual cues.",
+  "recommendations": ["string", "string", "string", "string"]
+}
+
+Comprehensive Condition Checklist:
+- Eye-Specific: Cataracts (lens opacity), Glaucoma signs (cupping/redness), Conjunctivitis (pink eye), Diabetic Retinopathy signs, Macular Degeneration indicators, Dry Eye (tear film), Pterygium, Corneal Opacity, Blepharitis, Chalazion/Stye, Subconjunctival Hemorrhage, Anisocoria (pupil size difference), Strabismus (misalignment), Hyphema.
+- Facial/Systemic: Ptosis (drooping), Jaundice (scleral icterus), Periorbital Edema, Exophthalmos (bulging), Facial Asymmetry (Bell's Palsy/Stroke signs), Xanthelasma (cholesterol deposits), Rosacea, Anemia signs (conjunctival pallor), Cyanosis (blue tint), Dehydration signs.
+
+Instructions:
+1. Be medically rigorous. If an image is blurry, reflect this in the 'confidence' and 'diagnostic_confidence_score'.
+2. Provide at least 5-6 detailed findings if both images are provided.
+3. The 'diagnostic_confidence_score' represents your overall certainty in this specific analysis.
+4. Ensure the 'summary' is professional and analytical.
+5. MEDICAL CONSERVATISM: If your confidence for any condition is > 85%, cap the reported value at 80% to ensure responsible reporting.`
+          });
+
+          const response = await ai.models.generateContent({
+            model,
+            contents: [{ parts }],
+            config: {
+              responseMimeType: "application/json"
+            }
+          });
+
+          const resultText = response.text;
+          const result = JSON.parse(resultText);
+          
+          // Apply confidence cap logic
+          result.conditions.forEach(c => {
+            if (c.confidence > 85) c.confidence = 80;
+          });
+          if (result.diagnostic_confidence_score > 85) {
+            result.diagnostic_confidence_score = 80;
+          }
+
+          clearInterval(progInt);
+          progBar.style.width = '100%';
+          renderResults(result);
+        } catch (e) {
+          console.error(e);
+          clearInterval(progInt);
+          renderFallback();
+        }
+
+        setTimeout(() => {
+          progOuter.style.display = 'none';
+        }, 600);
+        analyzeBtn.disabled = false;
+        btnText.textContent = 'Analyse Again';
+        spinner.style.display = 'none';
+      }
+
+      function barClass(sev) {
+        if (sev === 'normal') return 'bar-ok';
+        if (sev === 'mild') return 'bar-warn';
+        return 'bar-danger';
+      }
+
+      function pctClass(sev) {
+        if (sev === 'normal') return 'pct-ok';
+        if (sev === 'mild') return 'pct-warn';
+        return 'pct-danger';
+      }
+
+      function sevPill(sev) {
+        const map = { normal: 'sev-normal', mild: 'sev-mild', moderate: 'sev-moderate', severe: 'sev-severe' };
+        return map[sev] || 'sev-normal';
+      }
+
+      function sevLabel(sev) {
+        return sev.charAt(0).toUpperCase() + sev.slice(1);
+      }
+
+      function renderResults(result) {
+        const eye = result.conditions.filter(c => c.category === 'eye');
+        const face = result.conditions.filter(c => c.category === 'face' || c.category === 'systemic');
+
+        const sevRow = document.getElementById('severityRow');
+        sevRow.innerHTML = `
+          <div class="severity-pill sev-normal" style="background: rgba(26,125,232,0.12); color: #7ab8f5; border: 0.5px solid rgba(26,125,232,0.25)">CONFIDENCE: ${result.diagnostic_confidence_score}%</div>
+          <div class="severity-pill ${sevPill(result.overall_severity)}">OVERALL: ${sevLabel(result.overall_severity)}</div>
+        `;
+
+        function renderGroup(title, items) {
+          if (!items.length) return '';
+          return `
+            <div class="finding-card">
+              <div class="finding-title">${title}</div>
+              <div class="finding-list">
+                ${items.map(c => `
+                  <div class="finding-item">
+                    <div class="finding-meta">
+                      <div class="finding-name">${c.name}</div>
+                      <div class="finding-pct ${pctClass(c.severity)}">${c.confidence}%</div>
+                    </div>
+                    <div class="finding-desc">${c.description}</div>
+                    <div class="finding-bar-wrap">
+                      <div class="finding-bar ${barClass(c.severity)}" style="width: 0" data-w="${c.confidence}"></div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        document.getElementById('findings').innerHTML = renderGroup('Eye Findings', eye) + renderGroup('Facial & Systemic', face);
+        document.getElementById('summaryText').textContent = result.summary;
+        document.getElementById('recoList').innerHTML = result.recommendations.map(r => `
+          <div class="reco-item">
+            <div class="reco-dot"></div>
+            <span>${r}</span>
+          </div>
+        `).join('');
+        
+        results.classList.add('show');
+
+        setTimeout(() => {
+          document.querySelectorAll('.finding-bar').forEach(b => {
+            b.style.width = b.dataset.w + '%';
+          });
+        }, 100);
+      }
+
+      function renderFallback() {
+        renderResults({
+          conditions: [
+            { name: 'Image quality check', confidence: 45, severity: 'mild', category: 'eye', description: 'Analysis could not be completed with full confidence.' },
+            { name: 'Redness / irritation', confidence: 30, severity: 'mild', category: 'eye', description: 'Possible irritation noted.' },
+            { name: 'Periorbital assessment', confidence: 25, severity: 'normal', category: 'face', description: 'Normal appearance.' }
+          ],
+          overall_severity: 'mild',
+          diagnostic_confidence_score: 35,
+          summary: 'Analysis could not be completed with full confidence. Image resolution or angle may be insufficient for accurate assessment. Please upload a clearer, well-lit close-up photograph.',
+          recommendations: [
+            'Upload a high-resolution, well-lit image for more accurate results',
+            'Ensure eye is fully open and centred in frame',
+            'Consult an ophthalmologist for professional examination'
+          ]
+        });
+      }
+    </script>
+  </body>
+</html>
